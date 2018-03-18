@@ -6,6 +6,8 @@
 
 支持bsdiff 进行差分， 有一个还算可以看的管理界面。 后台使用 node搭建，比较简单。
 
+开发的主要原因是为了支持我的 [axe](https://github.com/CodingForMoney/axe) , 所以这个离线包系统属于 `axe`系统中的一部分，附赠内容。
+
 ### 安装使用
 
 安装
