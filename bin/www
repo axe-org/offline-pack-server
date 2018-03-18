@@ -6,7 +6,12 @@ const process = require('process')
 let workPath = process.cwd()
 
 if (process.argv.length === 3) {
-  workPath = path.join(workPath, process.argv[2])
+  let inputPath = process.argv[2]
+  if (path.isAbsolute(inputPath)) {
+    workPath = inputPath
+  } else {
+    workPath = path.join(workPath, process.argv[2])
+  }
 }
 let binPath = __dirname // 可执行文件目录
 config.initConfig(binPath, workPath)

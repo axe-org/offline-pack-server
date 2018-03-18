@@ -99,7 +99,7 @@ function route (app) {
         }
         if (req.body.version > maxVersion) {
           let taskName = req.body.name + req.body.version
-          if (taskName in uploadingTasks) {
+          if (uploadingTasks[taskName]) {
             res.json({
               error: '当前该版本已有任务正在上传，请稍后刷新页面后再重新上传'
             })

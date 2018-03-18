@@ -29,7 +29,11 @@ function route (app) {
   })
 }
 // 初始化
-refreshPackInfo()
+setTimeout(() => {
+  // 因为数据库要初始化 😢
+  refreshPackInfo()
+}, 3000)
+
 // 同时，每10分钟主动刷新一次数据。
 setInterval(refreshPackInfo, 600 * 1000)
 
