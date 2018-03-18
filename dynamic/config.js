@@ -64,7 +64,7 @@ function initConfig (binPath, workPath) {
       bucket: config.oss.bucket
     })
   }
-  let privateKey = new RSA(config.pem)
+  let privateKey = new RSA(config.pem, {encryptionScheme: 'pkcs1'})
   if (!privateKey) {
     console.log('config.js 中配置的 pem 私钥配置有误！！！')
     process.exit(1)

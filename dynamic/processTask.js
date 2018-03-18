@@ -3,13 +3,13 @@ const config = require('./config')
 const md5 = require('md5')
 const fs = require('fs')
 const path = require('path')
-const unzip = require('unzip')
+const decompress = require('decompress');
 const rimraf = require('rimraf')
 const archiver = require('archiver')
 const bsdiff = require('bsdiff-nodejs')
 
 const sql = require('./sql')
-const signDataLength = config.keyLength - 11
+const signDataLength = config.keyLength - 12
 // 处理任务， 负责下载旧包， 差分，上传包，更新数据库
 class ProcessTask {
   constructor (packageInfo) {
@@ -39,23 +39,19 @@ class ProcessTask {
   }
   unzipPack () {
     this.process(25, '解压包...')
-    let unzipStream = unzip.Extract({ path: this.unzipDirPath })
-    unzipStream.on('finish', () => {
-      // 解压完成后， 进行签名
+    decompress(this.filePath, this.unzipDirPath).then(files => {
       this.process(30, '开始签名...')
       setTimeout(() => {
         fs.unlink(this.filePath, () => {
           this.sign()
         })
       }, 3000)
+    }).catch((err) => {
+      this.process(0, '解压文件失败，请确认上传的是zip压缩包！！！' + err)
     })
-    unzipStream.on('error', () => {
-      this.process(0, '解压文件失败，请确认上传的是zip压缩包！！！')
-    })
-    fs.createReadStream(this.filePath).pipe(unzipStream)
   }
   sign () {
-    this.signInfo = {'name': this.packageInfo.name, 'version': this.packageInfo.version}
+    this.signInfo = {'name': this.packageInfo.name, 'version': this.packageInfo.version, 'setting': this.packageInfo.update_setting}
     // 签名，使用rsa 私钥加密 签名信息，由于最大加密长度只有 117 ,所以，我们签名的文件不能多。
     fs.readdir(this.unzipDirPath, (err, files) => {
       if (err) {
@@ -83,6 +79,7 @@ class ProcessTask {
             }, 100)
           })
         } else {
+          this.signInfo[fileName] = undefined
           this.signFile(files, index + 1)
         }
       }
@@ -97,7 +94,7 @@ class ProcessTask {
     let signJSON = JSON.stringify(this.signInfo)
     // 进行rsa加密
     let encrypted = config.privateKey.encryptPrivate(Buffer.from(signJSON))
-    fs.writeFile(path.join(this.unzipDirPath, '.mx_pack_sign'), encrypted, () => {
+    fs.writeFile(path.join(this.unzipDirPath, '.axe_pack_sign'), encrypted, () => {
       this.process(50, 'RSA 签名完成')
       this.zipFiles()
     })
