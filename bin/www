@@ -1,0 +1,42 @@
+#!/usr/bin/env node
+const path = require('path')
+const config = require('../dynamic/config')
+const process = require('process')
+
+let workPath = process.cwd()
+
+if (process.argv.length === 3) {
+  workPath = path.join(workPath, process.argv[2])
+}
+let binPath = __dirname // 可执行文件目录
+config.initConfig(binPath, workPath)
+
+const express = require('express')
+
+const app = express()
+const appRouter = require('../dynamic/app')
+const adminRouter = require('../dynamic/admin')
+const bodyParser = require('body-parser')
+
+const adminWebPath = path.join(config.serverPath, 'static')
+app.use(bodyParser.urlencoded({extended: false}))
+app.use(bodyParser.json())
+
+appRouter.router(app)
+adminRouter.router(app)
+
+app.use(adminRouter.path, express.static(adminWebPath))
+if (config.local) {
+  app.use(config.local.publicPath, express.static(config.local.storageDir))
+}
+
+let port = config.port
+if (!port) {
+  port = 2677
+}
+
+let server = app.listen(port, function () {
+  let host = server.address().address
+  let port = server.address().port
+  console.log('应用实例，访问地址为 http://%s:%s', host, port)
+})
