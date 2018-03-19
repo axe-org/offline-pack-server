@@ -121,10 +121,10 @@ function getLastestPackagesInfo (callback) {
       let ret = {}
       rows.forEach(function (row) {
         let lastestPack = {}
-        lastestPack.version = row.verbose
-        lastestPack.update_setting = row.update_setting
+        lastestPack.version = row.version
+        lastestPack.setting = row.update_setting
         lastestPack.download_url = row.download_url
-        lastestPack.patch_urls = row.patch_urls
+        lastestPack.patch_urls = JSON.parse(row.patch_urls)
         ret[row.name] = lastestPack
       })
       callback(null, ret)

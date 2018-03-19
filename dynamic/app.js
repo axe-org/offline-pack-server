@@ -15,12 +15,12 @@ function refreshPackInfo () {
 // 为了提高后台性能，将处理交由前端处理
 function route (app) {
   // 获取全部包信息
-  app.post('/app/allPacks', function (req, res) {
+  app.get('/app/allPacks', function (req, res) {
     res.json(packageInfo)
   })
   // 检测一个单独的包的更新情况。
-  app.post('/app/pack', function (req, res) {
-    let packName = req.body.moduleName
+  app.get('/app/pack', function (req, res) {
+    let packName = req.query.moduleName
     if (!packName || !packageInfo[packName]) {
       res.json({error: '包未配置！！！'})
     } else {
