@@ -1,6 +1,6 @@
 {
   "name": "offline-pack-server",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "offline-pack server",
   "main": "index.js",
   "bin": {
