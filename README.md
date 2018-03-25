@@ -40,7 +40,7 @@
 
 ## TODO
 
-* ~~ ios 支持 ~~ [ios](https://github.com/CodingForMoney/offline-pack-ios.git)
+* ~~ios 支持~~ [ios](https://github.com/CodingForMoney/offline-pack-ios.git)
 * ~~多APP支持~~
 * ~~设置APP版本号限制~~
 * ~~添加按序强制更新模式~~
