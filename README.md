@@ -38,10 +38,9 @@
 
 包内不要有中文路径和中文文件， 否则会解压出错！！！
 
-### app 组件
-
-* [ios](https://github.com/CodingForMoney/offline-pack-ios.git)
-
 ## TODO
 
-* 多APP支持
+* ~~ ios 支持 ~~ [ios](https://github.com/CodingForMoney/offline-pack-ios.git)
+* ~~多APP支持~~
+* ~~设置APP版本号限制~~
+* ~~添加按序强制更新模式~~

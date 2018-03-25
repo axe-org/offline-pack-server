@@ -21,7 +21,10 @@ function createTable () {
             name VARCHAR(20),
             version INT(5),
             state INT(1),
-            update_setting INT(1),
+            update_time INT(1),
+            update_force INT(1),
+            app_id VARCHAR(20),
+            app_version INT(5),
             update_log TEXT,
             created_time DATETIME,
             stoped_time DATETIME,
@@ -36,8 +39,9 @@ function sumbitPackageInfo (info, callback) {
   // 提交时检测版本号之类的信息。
   console.log('sumbitPackageInfo Info : ' + JSON.stringify(info))
   let sql = `INSERT INTO package VALUES 
-  (NULL, ? , ? , 1 , ? , ? ,DATETIME('now','localtime'),DATETIME('now','localtime'), ? , ?);`
-  db.run(sql, [info.name, info.version, info.update_setting, info.update_log, info.download_url, info.patch_urls], callback)
+  (NULL, ? , ? , 1 , ? , ? , ? , ? , ? ,DATETIME('now','localtime'),DATETIME('now','localtime'), ? , ?);`
+  db.run(sql, [info.name, info.version, info.update_time, info.update_force, info.app_id,
+    info.app_version, info.update_log, info.download_url, info.patch_urls], callback)
 }
 
 // 查出最新的3个包的版本号和下载地址
@@ -111,10 +115,11 @@ function stopPackage (packageId, callback) {
   })
 }
 
-// 获取最新的包信息
-function getLastestPackagesInfo (callback) {
-  let sql = 'SELECT * , MAX(version) FROM package WHERE state = 1 GROUP BY name'
-  db.all(sql, function (err, rows) {
+// 传入 appid 和 appversion ,以获取最新包信息。
+function getLastestPackagesInfo (appID, appVersion, callback) {
+  let sql = `SELECT * , MAX(version) FROM package WHERE state = 1 
+  AND app_id = ? AND app_version >= ? GROUP BY name`
+  db.all(sql, [appID, appVersion], function (err, rows) {
     if (err) {
       callback(err)
     } else {
