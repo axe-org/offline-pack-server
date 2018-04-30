@@ -8,25 +8,21 @@ const ProcessTask = require('./processTask')
 function route (app) {
   // 根据 状态和 模块名 来搜索离线包列表。
   app.get('/admin/packlist', function (req, res) {
-    let statesSetting = req.query.states
+    let statesSetting = req.query.status
     let searchName = req.query.search
     let pageNum = req.query.page
-    console.log(
-      '查询离线包列表 ： ' +
-        statesSetting +
-        ' | ' +
-        searchName +
-        ' 分页 :' +
-        pageNum
-    )
+    if (statesSetting === undefined || pageNum === undefined) {
+      return res.json({error: '参数传递错误！！！'})
+    }
+    pageNum = parseInt(pageNum) - 1
     let states = [0, 1, 2]
     if (statesSetting) {
       states = statesSetting.split('')
     }
     sql.getPackageInfo(states, searchName, pageNum, (err, list, count) => {
       if (err) {
-        res.status(500)
-        res.send()
+        console.log(err)
+        res.json({error: err.message})
       } else {
         res.json({
           list: list,
@@ -38,29 +34,30 @@ function route (app) {
   // 暂停包
   app.post('/admin/stopPack', function (req, res) {
     let packId = req.body.id
-    if (packId) {
-      sql.stopPackage(packId, err => {
-        if (err) {
-          res.status(500)
-        } else {
-          res.status(200)
-          setTimeout(() => {
-            // 如果修改了包的状态，则刷新app区数据.
-            appRoute.refreshPackInfo()
-          }, 100)
-        }
-        res.send()
-      })
-    } else {
-      console.log('传入参数有误！！' + JSON.stringify(req.body))
-      res.status(500)
-      res.send()
+    if (packId === undefined) {
+      return res.json({error: '参数传递错误！！'})
     }
+    packId = parseInt(packId)
+    sql.stopPackage(packId, err => {
+      if (err) {
+        console.log(err)
+        res.json({error: err.message})
+      } else {
+        res.json({})
+        setTimeout(() => {
+          // 如果修改了包的状态，则刷新app区数据.
+          appRoute.refreshPackInfo()
+        }, 100)
+      }
+    })
   })
 
   // check 前端上传包后，轮询以检测包是否完成上传。
   app.get('/admin/checkTask', function (req, res) {
     let taskID = req.query.taskID
+    if (taskID === undefined) {
+      return res.json({error: '参数传递错误!!'})
+    }
     let packageInfo = uploadingTasks[taskID]
     if (!packageInfo) {
       res.json({ error: '未找到下载任务' })
@@ -87,11 +84,14 @@ function route (app) {
 
   // 提交离线包, 创建任务
   app.post('/admin/pushPackInfo', function (req, res) {
-    console.log('配置新包 :', JSON.stringify(req.body))
     sql.getLastestPackageVersion(req.body.name, (err, lastestPacks) => {
       if (err) {
         res.json({ error: '数据库异常' })
       } else {
+        let task = {...req.body}
+        task.version = parseInt(task.version)
+        task.download_time = parseInt(task.download_time)
+        task.download_force = parseInt(task.download_force)
         let maxVersion = 0
         for (let version in lastestPacks) {
           version = parseInt(version)
@@ -105,11 +105,15 @@ function route (app) {
             })
             return
           }
-          uploadingTasks[taskName] = req.body
-          req.body['patch_urls'] = lastestPacks
-          req.body['taskProgress'] = 10
-          req.body['taskState'] = '等待上传包'
-          req.body['taskID'] = taskName
+          uploadingTasks[taskName] = task
+          let appVersion = task['app_version']
+          let splited = appVersion.split('.')
+          task['app_version_code'] = parseInt(splited[0]) * 1000 * 1000 + parseInt(splited[1]) * 1000 + parseInt(splited[2])
+          task['patch_urls'] = lastestPacks
+          task['taskProgress'] = 10
+          task['taskState'] = '等待上传包'
+          task['taskID'] = taskName
+
           res.json({ taskID: taskName })
         } else {
           res.json({

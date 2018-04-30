@@ -51,7 +51,12 @@ class ProcessTask {
     })
   }
   sign () {
-    this.signInfo = {'name': this.packageInfo.name, 'version': this.packageInfo.version, 'setting': this.packageInfo.update_setting}
+    this.signInfo = {
+      'name': this.packageInfo.name,
+      'version': this.packageInfo.version,
+      'download_time': this.packageInfo.download_time,
+      'download_force': this.packageInfo.download_force
+    }
     // 签名，使用rsa 私钥加密 签名信息，由于最大加密长度只有 117 ,所以，我们签名的文件不能多。
     fs.readdir(this.unzipDirPath, (err, files) => {
       if (err) {
@@ -154,7 +159,7 @@ class ProcessTask {
     // 本地存储文件。
     let savedir = path.join(config.saveDir, this.packageInfo.name)
     if (!fs.existsSync(savedir)) {
-      fs.mkdir(savedir)
+      fs.mkdirSync(savedir)
     }
     for (let version in this.packageInfo.patch_urls) {
       let patchFileName = this.packageInfo.patch_urls[version]
@@ -220,7 +225,7 @@ class ProcessTask {
     // 复制到指定路径
     let savedir = path.join(config.local.copyDir, this.packageInfo.name)
     if (!fs.existsSync(savedir)) {
-      fs.mkdir(savedir)
+      fs.mkdirSync(savedir)
     }
     for (let version in this.packageInfo.patch_urls) {
       let patchFileName = this.packageInfo.patch_urls[version]
@@ -293,9 +298,9 @@ class ProcessTask {
   submitPackageInfo () {
     sql.sumbitPackageInfo(this.packageInfo, (err) => {
       if (err) {
+        console.log(err)
         this.process(0, '修改数据库失败 ！！！')
       } else {
-        // 彻底完成， 累死我了
         this.process(100, '完成上传！！！')
       }
     })

@@ -1,74 +1,84 @@
 const sql = require('./sql')
+const hash = require('string-hash')
 const NodeCache = require('node-cache')
 // 本地缓存，暂时没有失效时间，通过通知进行清空操作。
 const localCache = new NodeCache({checkperiod: 0})
 
-function getLastestPackageInfoFromSql (appID, appVersion, callback) {
-  sql.getLastestPackagesInfo(appID, appVersion, (err, packages) => {
-    if (err) {
-      console.log('数据库出错 :' + err)
-      callback(err)
-    } else {
-      let key = appID + appVersion
-      localCache.set(key, packages)
-      callback(null, packages)
-    }
-  })
-}
-
 // 为了提高后台性能，将处理交由前端处理
 function route (app) {
   // 获取全部包信息
-  app.get('/app/allPacks', function (req, res) {
-    let appID = req.query.appID
-    let appVersion = req.query.appVersion
-    if (!appID || !appVersion) {
-      res.json({error: '参数传入错误'})
-      return
+  app.post('/app/full', function (req, res) {
+    let tags = req.body.tags
+    let appVersion = req.body.appVersion
+    if (tags === undefined || appVersion === undefined) {
+      return res.json({error: '参数传入错误'})
     }
-    let key = appID + appVersion
+    // tag 不能无限多。
+    if (tags.length > 30) {
+      return res.json({error: '参数传递错误！！！'})
+    }
+    let key = appVersion + JSON.stringify(tags)
+    key = hash(key)
     localCache.get(key, function (err, value) {
       if (err) {
         console.log('node-cache 异常 ： ' + err)
         res.json({error: '未知错误，node-cache 异常！！!'})
       } else {
-        if (value === undefined) {
+        if (value) {
+          res.json(value)
+        } else {
+          let splited = appVersion.split('.')
+          let appVersionCode = parseInt(splited[0]) * 1000 * 1000 + parseInt(splited[1]) * 1000 + parseInt(splited[2])
           // 如果为空值，则查数据库，并设置缓存。
-          getLastestPackageInfoFromSql(appID, appVersion, (err, packages) => {
+          sql.queryOfflinePackages(tags, appVersionCode, (err, data) => {
             if (err) {
-              res.json({error: '数据库异常！！！'})
+              res.json({error: err.message})
+              console.log(err)
             } else {
-              res.json(packages)
+              res.json(data)
+              localCache.set(key, data)
             }
           })
-        } else {
-          res.json(value)
         }
       }
     })
   })
   // 检测一个单独的包的更新情况。
-  app.get('/app/pack', function (req, res) {
-    let packName = req.query.moduleName
-    let appID = req.query.appID
-    let appVersion = req.query.appVersion
-    if (!appID || !appVersion || !packName) {
+  app.post('/app/pack', function (req, res) {
+    let packName = req.body.moduleName
+    let tags = req.body.appID
+    let appVersion = req.body.appVersion
+    if (packName === undefined || tags === undefined || appVersion === undefined) {
       res.json({error: '参数传入错误'})
       return
     }
-    let key = appID + appVersion
+    if (tags.length > 30) {
+      return res.json({error: '参数传递错误'})
+    }
+    let key = appVersion + JSON.stringify(tags)
+    key = hash(key)
     localCache.get(key, function (err, value) {
       if (err) {
         console.log('node-cache 异常 ： ' + err)
         res.json({error: '未知错误，node-cache 异常！！!'})
       } else {
-        if (value === undefined) {
-          // 如果为空值，则查数据库，并设置缓存。
-          getLastestPackageInfoFromSql(appID, appVersion, (err, packages) => {
+        if (value) {
+          let packInfo = value[packName]
+          if (packInfo) {
+            res.json(packInfo)
+          } else {
+            res.json({error: '包未配置！！！'})
+          }
+        } else {
+          let splited = appVersion.split('.')
+          let appVersionCode = parseInt(splited[0]) * 1000 * 1000 + parseInt(splited[1]) * 1000 + parseInt(splited[2])
+          sql.queryOfflinePackages(tags, appVersionCode, (err, data) => {
             if (err) {
-              res.json({error: '数据库异常！！！'})
+              res.json({error: err.message})
+              console.log(err)
             } else {
-              let packInfo = packages[packName]
+              localCache.set(key, data)
+              let packInfo = data[packName]
               if (packInfo) {
                 res.json(packInfo)
               } else {
@@ -76,13 +86,6 @@ function route (app) {
               }
             }
           })
-        } else {
-          let packInfo = value[packName]
-          if (packInfo) {
-            res.json(packInfo)
-          } else {
-            res.json({error: '包未配置！！！'})
-          }
         }
       }
     })

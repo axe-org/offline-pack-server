@@ -13,7 +13,7 @@ if (process.argv.length === 3) {
   if (path.isAbsolute(inputPath)) {
     workPath = inputPath
   } else {
-    workPath = path.join(workPath, process.argv[2])
+    workPath = path.join(workPath, inputPath)
   }
 }
 let binPath = __dirname // 可执行文件目录
