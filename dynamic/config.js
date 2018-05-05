@@ -26,7 +26,7 @@ function initConfig (binPath, workPath) {
   let configPath = path.join(workPath, 'config.js')
   if (!fs.existsSync(configPath)) {
     console.log('以默认配置初始化。。。 ')
-    fs.writeFileSync(configPath, fs.readFileSync(path.join(config.serverPath, 'static/config.js')))
+    fs.writeFileSync(configPath, fs.readFileSync(path.join(config.serverPath, 'dynamic/defaultConfig.js')))
   }
   config.saveDir = path.join(workPath, 'packages')
   if (!fs.existsSync(config.saveDir)) {
