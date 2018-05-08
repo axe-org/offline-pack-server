@@ -2,9 +2,6 @@
 const path = require('path')
 const config = require('../dynamic/config')
 const process = require('process')
-// const easyMonitor = require('easy-monitor');
-
-// easyMonitor('你的项目名称');
 
 let workPath = process.cwd()
 
