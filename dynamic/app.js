@@ -46,7 +46,7 @@ function route (app) {
   // 检测一个单独的包的更新情况。
   app.post('/app/pack', function (req, res) {
     let packName = req.body.moduleName
-    let tags = req.body.appID
+    let tags = req.body.tags
     let appVersion = req.body.appVersion
     if (packName === undefined || tags === undefined || appVersion === undefined) {
       res.json({error: '参数传入错误'})
